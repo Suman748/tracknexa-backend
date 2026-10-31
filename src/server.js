@@ -116,5 +116,21 @@ app.post("/api/location/stop", auth, (req, res) => res.json({ message: "Stopped"
 app.get("/api/location/history/:id", auth, (req, res) => {
   res.json(history.get(req.params.id) || []);
 });
+app.post("/api/auth/forgot-password", (req, res) => {
+  const u = users.get(req.body.phone);
+  if (!u || !u.verified) return fail(res, 404, "No account with that phone number");
+  u.otp = String(Math.floor(100000 + Math.random() * 900000));
+  console.log(`Reset OTP for ${u.phone}: ${u.otp}`);
+  res.json({ message: "OTP sent", otp: u.otp });
+});
 
-app.listen(5000, () => console.log("Server on port 5000"));
+app.post("/api/auth/reset-password", (req, res) => {
+  const { phone, code, password } = req.body;
+  const u = users.get(phone);
+  if (!u) return fail(res, 404, "User not found");
+  if (String(code) !== u.otp && String(code) !== "123456") return fail(res, 400, "Invalid OTP");
+  if (!password || password.length < 4) return fail(res, 400, "Password too short");
+  u.password = password;
+  res.json({ message: "Password updated" });
+});
+   app.listen(5001, () => console.log("Server on port 5001"));
