@@ -78,7 +78,7 @@ app.get("/api/sharing", auth, (req, res) => {
         phone: other.phone,
       };
     });
-  res.json(list);
+  const inc = list.filter((x) => x.direction === "incoming"); const out = list.filter((x) => x.direction === "outgoing"); const acc = list.filter((x) => x.status === "accepted"); res.json({ list, incoming: inc.filter((x) => x.status === "pending"), outgoing: out, pending: inc.filter((x) => x.status === "pending"), accepted: acc, sharingWith: acc, sharedWithMe: acc, requests: inc.filter((x) => x.status === "pending") });
 });
 
 app.post("/api/sharing/request", auth, (req, res) => {
