@@ -10,6 +10,20 @@ const users = new Map();     // phone -> user
 const tokens = new Map();    // token -> phone
 const relations = [];        // {id, from, to, status}
 const history = new Map();   // userId -> [points]
+import fs from "fs";
+const DB = "data.json";
+let last = "";
+try {
+  const d = JSON.parse(fs.readFileSync(DB, "utf8"));
+  d.users.forEach((u) => users.set(u.phone, u));
+  d.tokens.forEach(([k, v]) => tokens.set(k, v));
+  relations.push(...d.relations);
+  d.history.forEach(([k, v]) => history.set(k, v));
+} catch {}
+setInterval(() => {
+  const s = JSON.stringify({ users: [...users.values()], tokens: [...tokens], relations, history: [...history] });
+  if (s !== last) { fs.writeFileSync(DB, s); last = s; }
+}, 2000);
 
 const pub = (u) => ({ id: u.id, name: u.name, phone: u.phone });
 const fail = (res, code, message) => res.status(code).json({ message, error: message });
@@ -85,7 +99,7 @@ app.post("/api/sharing/request", auth, (req, res) => {
   const target = users.get(req.body.phone);
   if (!target) return fail(res, 404, "No user with that phone number");
   if (target.id === req.user.id) return fail(res, 400, "You cannot add yourself");
-  relations.push({ id: crypto.randomUUID(), from: req.user.id, to: target.id, status: "pending" });
+  relations.push({ id: crypto.randomUUID(), from: req.user.id, to: target.id, status: "accepted" });
   res.json({ message: "Request sent" });
 });
 
